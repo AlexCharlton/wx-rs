@@ -1,5 +1,6 @@
 use std::env;
 use std::error::Error;
+use std::fs;
 use std::path::Path;
 use std::process::Command;
 
@@ -61,9 +62,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         .compile("libwxbridge.a");
 
     let wx_libs = if is_msvc() {
+        let out = env::var("OUT_DIR").expect("No OUT_DIR env var");
+        let out_dir = Path::new(&out).join("lib");
+        fs::create_dir_all(out_dir.clone())?;
         format!(
-            "-L{}/lib/vc_x64_lib -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32 -loleacc -lversion -luxtheme -lshlwapi -luser32",
-            &wx_path.canonicalize()?.to_str().unwrap()[4..]
+            "-L{}/lib/vc_x64_lib -L{} -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32 -loleacc -lversion -luxtheme -lshlwapi -luser32",
+            &wx_path.canonicalize()?.to_str().unwrap()[4..],
+            &out_dir.canonicalize()?.to_str().unwrap(),
         )
     } else if is_windows() {
         format!("-L{}/msw64-release-build/lib -lopengl32 -lwxtiff-3.1 -lwxjpeg-3.1 -lwxpng-3.1 -lwxregexu-3.1 -lwxscintilla-3.1 -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32 -lexpat -lz  -loleacc -lversion -luxtheme -lshlwapi -luser32", &wx_path.canonicalize()?.to_str().unwrap()[4..])
@@ -125,6 +130,8 @@ use std::fs::File;
 use std::io;
 fn gunzip_libs(wx_path: &Path) {
     let path = wx_path.join("lib/vc_x64_lib");
+    let out = env::var("OUT_DIR").expect("No OUT_DIR env var");
+    let out_dir = Path::new(&out).join("lib");
     for entry in glob(&format!("{}/*.gz", path.display())).unwrap() {
         if let Ok(file_path) = entry {
             if path.join(file_path.file_stem().unwrap()).exists() {
@@ -132,7 +139,7 @@ fn gunzip_libs(wx_path: &Path) {
             }
             let gz_file = File::open(&file_path).unwrap();
             let mut gz = GzDecoder::new(&gz_file);
-            let mut out = File::create(path.join(file_path.file_stem().unwrap())).unwrap();
+            let mut out = File::create(out_dir.join(file_path.file_stem().unwrap())).unwrap();
             io::copy(&mut gz, &mut out).unwrap();
         }
     }
