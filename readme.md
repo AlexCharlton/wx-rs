@@ -13,6 +13,14 @@ Some things that'd be great to have:
 - The build script is currently highly deficient. It relies on pre-compiled instances of wxWidgets existing in the repo found in `dist/`. So if this does not compile, you need to go in there and compile it. The build script should be better than this.
 - Icon support for Windows/Linux
 
+
+## Building from source
+```
+git submodule init && git submodule update
+```
+
+Before using cargo.
+
 # Building wxWidgets
 
 ## Windows
