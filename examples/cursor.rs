@@ -12,7 +12,7 @@ thread_local!(
 use std::os::raw::c_void;
 extern "C" fn handle_event(event: *const c_void) {
     match wx_rs::get_event_type(event) {
-        EventType::MouseLeftUp | EventType::MouseLeftDclick => {
+        EventType::MouseLeftUp => {
             let cursor = CURSORS.with(|r| unsafe { r.get().as_mut().unwrap().next().unwrap() });
             println!("set_cursor: {:?}", cursor);
             wx_rs::set_cursor(*cursor);
