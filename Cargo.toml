@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["alex.n.charlton@gmail.com"]
 edition = "2018"
 description = "Self-contained wxWidgets in Rust."
+repository = "https://github.com/AlexCharlton/wx-rs"
+license = "MIT"
+keywords = ["windowing"]
 
 [dependencies]
 bitflags = "1.2.1"
