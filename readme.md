@@ -16,7 +16,7 @@ Some things that'd be great to have:
 
 ## Building from source
 ```
-git submodule init && git submodule update
+git submodule update --init
 ```
 
 Before using cargo.
