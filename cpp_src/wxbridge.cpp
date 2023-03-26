@@ -15,11 +15,18 @@ void setDPIAware() {
   // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiaware
   HMODULE module = LoadLibraryA("User32.dll");
   if(module) {
-    BOOL(WINAPI * pFunc)(void) =(BOOL(WINAPI *)(void)) GetProcAddress(module, "SetProcessDPIAware");
+    // BOOL(WINAPI * pFunc)(void) =(BOOL(WINAPI *)(void)) GetProcAddress(module, "SetProcessDPIAware");
 
-    if(pFunc) {
-      pFunc();
+    // if(pFunc) {
+    //   pFunc();
+    // }
+
+    BOOL(WINAPI * pFunc2)(DPI_AWARENESS_CONTEXT) =(BOOL(WINAPI *)(DPI_AWARENESS_CONTEXT)) GetProcAddress(module, "SetProcessDpiAwarenessContext");
+
+    if(pFunc2) {
+      pFunc2(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     }
+
     FreeLibrary(module);
   }
 }
@@ -337,11 +344,11 @@ extern "C" {
 
 #ifdef __WINDOWS__
     // Adjust the window according to the display scale factor
-    double scale = wxGetApp().frame->GetContentScaleFactor();
+    double scale = wxGetApp().frame->GetDPIScaleFactor();
     wxGetApp().frame->SetSize(width * scale, height * scale);
 #else
     // OSX
-    double scale = wxGetApp().frame->GetContentScaleFactor();
+    double scale = wxGetApp().frame->GetDPIScaleFactor();
     wxGetApp().frame->SetSize(width, height);
     if (wxGetApp().frame->GetPosition().y < 20.0) {
       wxGetApp().frame->Move(0.0, 20.0);
@@ -399,7 +406,7 @@ extern "C" {
     struct Size sz = {s.x, s.y};
     return sz;
 #else
-    struct wxSize s = wxGetApp().frame->GetClientSize() * (1.0 / wxGetApp().frame->GetContentScaleFactor());
+    struct wxSize s = wxGetApp().frame->GetClientSize() * (1.0 / wxGetApp().frame->GetDPIScaleFactor());
     return Size { s.x, s.y };
 #endif
   }
@@ -413,7 +420,7 @@ extern "C" {
     } else {
       status_bar_height = 0;
     }
-    float scale_factor = wxGetApp().frame->GetContentScaleFactor();
+    float scale_factor = wxGetApp().frame->GetDPIScaleFactor();
     wxSize s =  wxGetApp().frame->GetClientSize();
     struct Size sz = {s.x * scale_factor, (s.y + status_bar_height) * scale_factor};
     return sz;
@@ -427,7 +434,7 @@ extern "C" {
   }
 
   float get_scale_factor() {
-    return wxGetApp().frame->GetContentScaleFactor();
+    return wxGetApp().frame->GetDPIScaleFactor();
   }
 
   void refresh() {
@@ -471,7 +478,7 @@ extern "C" {
   Size get_mouse_position(wxMouseEvent &event) {
 #ifdef __APPLE__
     wxPoint p = event.GetPosition();
-    float scale_factor = wxGetApp().frame->GetContentScaleFactor();
+    float scale_factor = wxGetApp().frame->GetDPIScaleFactor();
     struct Size s = {p.x * scale_factor, p.y * scale_factor};
     return s;
 #else

@@ -4,6 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use bzip2::read::BzDecoder;
 use cc;
 use embed_resource;
 
@@ -45,7 +46,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     if is_msvc() {
-        // gunzip_libs(wx_path);
         println!("cargo:rustc-link-lib=static=wxbase32u");
         println!("cargo:rustc-link-lib=static=wxmsw32u_core");
         println!("cargo:rustc-link-lib=static=wxpng");
@@ -73,7 +73,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-use bzip2::read::BzDecoder;
 fn download_dist() -> Result<PathBuf, Box<dyn Error>> {
     let dist_path = Path::new("./dist/");
     let wx_path = PathBuf::from(format!("./dist/{}", WX_PATH));
