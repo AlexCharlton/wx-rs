@@ -1,10 +1,15 @@
 use std::env;
 use std::error::Error;
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use cc;
 use embed_resource;
+
+const WX_PATH: &str = "wxWidgets-3.2.2.1";
+const WX_SOURCE: &str =
+    "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2.1/wxWidgets-3.2.2.1.tar.bz2";
 
 fn is_windows() -> bool {
     cfg!(windows)
@@ -19,7 +24,7 @@ fn is_osx() -> bool {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let wx_path = Path::new("./dist/wxWidgets/");
+    let wx_path = download_dist()?;
     build_bridge_lib(&wx_path)?;
 
     if !is_windows() && !is_osx() {
@@ -68,6 +73,26 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+use bzip2::read::BzDecoder;
+fn download_dist() -> Result<PathBuf, Box<dyn Error>> {
+    let dist_path = Path::new("./dist/");
+    let wx_path = PathBuf::from(format!("./dist/{}", WX_PATH));
+    if wx_path.exists() {
+        return Ok(wx_path);
+    }
+    println!("cargo:warning=wx-rs: Downloading source to './dist/");
+    fs::create_dir_all(dist_path)?;
+    let source_response = reqwest::blocking::get(WX_SOURCE)?;
+    let decoder = BzDecoder::new(source_response);
+    let mut archive = tar::Archive::new(decoder);
+    for file in archive.entries()? {
+        let mut file = file?;
+        file.unpack_in(dist_path)?;
+    }
+
+    return Ok(wx_path);
+}
+
 fn build_bridge_lib(wx_path: &Path) -> Result<(), Box<dyn Error>> {
     if !is_windows() && !is_osx() {
         println!("cargo:warning=wx-rs: Platform unsupported. Building a stub library.");
@@ -89,7 +114,7 @@ fn build_bridge_lib(wx_path: &Path) -> Result<(), Box<dyn Error>> {
 
     let wx_flags = if is_msvc() {
         format!(
-            "-I{}lib/vc_x64_lib/mswu -I{}include -D_WIN64 -D_FILE_OFFSET_BITS=64 -D__WXMSW__ -D_UNICODE -DNDEBUG -DNOPCH  /GR /EHsc",
+            "-I{}/lib/vc_x64_lib/mswu -I{}/include -D_WIN64 -D_FILE_OFFSET_BITS=64 -D__WXMSW__ -D_UNICODE -DNDEBUG -DNOPCH  /GR /EHsc",
             wx_path.display(),
             wx_path.display(),
         )
@@ -124,9 +149,10 @@ fn build_msvc(wx_path: &Path) -> Result<(), Box<dyn Error>> {
         .join("wxmsw32u_core.lib")
         .exists()
     {
-        println!("cargo:warning=wx-rs: Already built wxWidgets, skipping a re-build");
+        println!("cargo:warning=wx-rs: Already built wxWidgets. Skipping a re-build.");
         return Ok(());
     }
+    println!("cargo:warning=wx-rs: Building wxWidgets. This can take a few minutes.");
     let status = Command::new("nmake")
         .current_dir(wx_path.join("build").join("msw"))
         .args([
@@ -151,12 +177,11 @@ fn build_msvc(wx_path: &Path) -> Result<(), Box<dyn Error>> {
     let stderr = std::str::from_utf8(&status.stderr)?.to_string();
     println!("Building: {}", stdout);
     assert!(status.status.success(), "{}", stderr);
-    // TODO move lib path to OUT_DIR, delete build\msw\vc_x64_mswu
 
     Ok(())
 }
 
-fn get_libs(wx_path: &Path) -> Result<String, Box<dyn Error>> {
+fn get_libs(wx_path: &PathBuf) -> Result<String, Box<dyn Error>> {
     if is_msvc() {
         msvc_libs(wx_path)
     } else if is_windows() {
@@ -189,7 +214,7 @@ fn osx_libs(wx_path: &Path) -> Result<String, Box<dyn Error>> {
     )?)
 }
 
-fn embed_resource_file(wx_path: &Path) {
+fn embed_resource_file(wx_path: &PathBuf) {
     /*
     This was cribbed from https://github.com/nabijaczleweli/rust-embed-resource
     but extended to support the `--include-dir` argument to windres

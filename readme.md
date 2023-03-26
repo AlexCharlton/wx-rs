@@ -1,6 +1,8 @@
 # wx-rs
 
-*This is an alpha release. Don't expect much from me.*
+*This is an alpha release. Don't expect much from me.**
+
+**Only builds on the MSVC toolchain right now**
 
 An extremely partial set of bindings to wxWidgets, for Rust. The intent is that you can import this and all the bits of wxWidgets provided are statically linked in. Implements [`HasRawWindowHandle`](https://crates.io/crates/raw-window-handle). Callbacks are used for rendering and event handling. Features:
 - Window initialization
@@ -14,12 +16,14 @@ Some things that'd be great to have:
 - Icon support for Windows/Linux
 
 
-## Building from source
-```
-git submodule update --init --recursive
-```
+## Building
+The approach this crate takes is to download wxWidgets into the `./dist` directory, then build it. This means that you need to have a toolchain capable of compiling wxWidgets.
 
-Before using cargo.
+Why are we doing this instead of using submodules? Because with submodules cargo would naturally check out files, but this isn't desirable since we want cargo to ignore these files when packaging (because wxWidgets is huge: The package, when you trim out all non-source files is still around 100MB).
+
+Why do we save/compile to `dist` rather than cargo's preferred `OUT_DIR`? Because with the latter, we'd have to recompile wxWidgets more frequently. Since it takes quite a while to do so, it's much nicer to only have to compile once and then have the artifact around forever.
+
+If you want to do a fresh install, just `rm -R ./dist`.
 
 # Building wxWidgets
 
@@ -27,10 +31,10 @@ Before using cargo.
 
 ### Using the MSVC toolchain
 
-Make sure you're using ""x64 Native Tools Command Prompt for VS 2019"", and that cargo is in your path when compiling for the first time. After than msys will work fine.
+Make sure you're using ""x64 Native Tools Command Prompt for VS 2019"", and that cargo is in your path when compiling for the first time. After it's built, msys works fine to continue building things from the Rust side.
 - https://stackoverflow.com/questions/11065421/command-prompt-wont-change-directory-to-another-drive
 
-### Using the GNU toolchain
+### Using the GNU toolchain on Windows
 This depends on nightly rust to build correctly
 
 #### Getting MSYS2
@@ -42,6 +46,7 @@ $ pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-libexpat
 ```
 
 #### Building
+This is a note of what needs to be integrated into the build script.
 
 In a MSYS2 MinGW64 terminal:
 
@@ -50,11 +55,6 @@ $ cd dist/wxWidgets
 $ mkdir msw64-release-build
 $ ../configure --with-opengl --disable-shared
 $ make -j20
-```
-
-Changes can then be committed and pushed to the upstream:
-```
-git push origin HEAD:release-build
 ```
 
 ### Using the OSX toolchain
