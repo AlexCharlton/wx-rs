@@ -129,12 +129,29 @@ fn build_msvc(wx_path: &Path) -> Result<(), Box<dyn Error>> {
     }
     let status = Command::new("nmake")
         .current_dir(wx_path.join("build").join("msw"))
-        .args(["-f", "makefile.vc", "-a", "BUILD=release", "TARGET_CPU=X64"])
+        .args([
+            "-f",
+            "makefile.vc",
+            "-a",
+            "BUILD=release",
+            "TARGET_CPU=X64",
+            "USE_STC=0",
+            "USE_OPENGL=0",
+            "USE_HTML=0",
+            "USE_AUI=0",
+            "USE_MEDIA=0",
+            "USE_PROPGRID=0",
+            "USE_QA=0",
+            "USE_RIBBON=0",
+            "USE_WEBVIEW=0",
+            "USE_XRC=0",
+        ])
         .output()?;
     let stdout = std::str::from_utf8(&status.stdout)?.to_string();
     let stderr = std::str::from_utf8(&status.stderr)?.to_string();
     println!("Building: {}", stdout);
     assert!(status.status.success(), "{}", stderr);
+    // TODO move lib path to OUT_DIR, delete build\msw\vc_x64_mswu
 
     Ok(())
 }

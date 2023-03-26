@@ -8,9 +8,21 @@ repository = "https://github.com/AlexCharlton/wx-rs"
 license = "MIT"
 keywords = ["windowing"]
 exclude = [
-    "dist/wxWidgets/docs/*",
     "dist/wxWidgets/demos/*",
-    "dist/wxWidgets/samples/*",
+    "dist/wxWidgets/**/doc/*",
+    "dist/wxWidgets/**/docs/*",
+    "dist/wxWidgets/**/test/*",
+    "dist/wxWidgets/**/tests/*",
+    "dist/wxWidgets/**/testdata/*",
+    "dist/wxWidgets/**/samples/*",
+    "dist/wxWidgets/**/examples/*",
+    "dist/wxWidgets/src/stc/*",
+    "dist/wxWidgets/lib/vc_x64_lib/",
+    "dist/wxWidgets/lib/vc_x64_lib/*",
+    "dist/wxWidgets/build/msw/vc_x64_mswu/",
+    "dist/wxWidgets/build/msw/vc_x64_mswu/*",
+    "dist/wxWidgets/build/elfabi/*",
+    "dist/wxWidgets/src/tiff/html/*"
 ]
 
 [dependencies]
