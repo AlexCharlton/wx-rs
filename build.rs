@@ -1,7 +1,6 @@
 use std::env;
 use std::error::Error;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use cc;
@@ -44,7 +43,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         // gunzip_libs(wx_path);
         println!("cargo:rustc-link-lib=static=wxbase32u");
         println!("cargo:rustc-link-lib=static=wxmsw32u_core");
-        println!("cargo:rustc-link-lib=static=wxmsw32u_gl");
         println!("cargo:rustc-link-lib=static=wxpng");
         println!("cargo:rustc-link-lib=static=wxjpeg");
         println!("cargo:rustc-link-lib=static=wxtiff");
@@ -83,17 +81,17 @@ fn build_bridge_lib(wx_path: &Path) -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=cpp_src/wxbridge.cpp");
 
     //panic!("{}", wx_path.to_str().unwrap());
-    let outdir = if is_windows() {
-        get_msvc_deps()?
+    if is_windows() {
+        build_msvc(wx_path)?;
     } else {
         panic!("Not supported")
     };
 
     let wx_flags = if is_msvc() {
         format!(
-            "-I{}/lib/vc14x_x64_dll/mswu -I{}/include -D_WIN64 -D_FILE_OFFSET_BITS=64 -D__WXMSW__ -D_UNICODE -DNDEBUG -DNOPCH  /GR /EHsc",
-            outdir.display(),
-            outdir.display(),
+            "-I{}lib/vc_x64_lib/mswu -I{}include -D_WIN64 -D_FILE_OFFSET_BITS=64 -D__WXMSW__ -D_UNICODE -DNDEBUG -DNOPCH  /GR /EHsc",
+            wx_path.display(),
+            wx_path.display(),
         )
     } else if is_windows() {
         format!("-I{}/msw64-release-build/lib/wx/include/msw-unicode-static-3.1 -I{}/include -D_FILE_OFFSET_BITS=64 -D__WXMSW__", wx_path.display(), wx_path.display())
@@ -119,6 +117,28 @@ fn build_bridge_lib(wx_path: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn build_msvc(wx_path: &Path) -> Result<(), Box<dyn Error>> {
+    if wx_path
+        .join("lib")
+        .join("vc_x64_lib")
+        .join("wxmsw32u_core.lib")
+        .exists()
+    {
+        println!("cargo:warning=wx-rs: Already built wxWidgets, skipping a re-build");
+        return Ok(());
+    }
+    let status = Command::new("nmake")
+        .current_dir(wx_path.join("build").join("msw"))
+        .args(["-f", "makefile.vc", "-a", "BUILD=release", "TARGET_CPU=X64"])
+        .output()?;
+    let stdout = std::str::from_utf8(&status.stdout)?.to_string();
+    let stderr = std::str::from_utf8(&status.stderr)?.to_string();
+    println!("Building: {}", stdout);
+    assert!(status.status.success(), "{}", stderr);
+
+    Ok(())
+}
+
 fn get_libs(wx_path: &Path) -> Result<String, Box<dyn Error>> {
     if is_msvc() {
         msvc_libs(wx_path)
@@ -132,46 +152,10 @@ fn get_libs(wx_path: &Path) -> Result<String, Box<dyn Error>> {
 }
 
 fn msvc_libs(wx_path: &Path) -> Result<String, Box<dyn Error>> {
-    // TODO remove out dir
-    let out = env::var("OUT_DIR").expect("No OUT_DIR env var");
-    let out_dir = Path::new(&out);
     Ok(format!(
         "-L{} -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32 -loleacc -lversion -luxtheme -lshlwapi -luser32",
-        &out_dir.join("lib").join("vc14x_x64_dll").canonicalize()?.to_str().unwrap()[4..],
+        &wx_path.join("lib").join("vc_x64_lib").canonicalize()?.to_str().unwrap()[4..],
     ))
-}
-
-use std::fs::File;
-use std::io::copy;
-use std::io::Read;
-fn get_msvc_deps() -> Result<PathBuf, Box<dyn Error>> {
-    let out = env::var("OUT_DIR").expect("No OUT_DIR env var");
-    let dev_target = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2.1/wxMSW-3.2.2_vc14x_x64_Dev.7z";
-    let header_target = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2.1/wxWidgets-3.2.2.1-headers.7z";
-    let temp_dir = Path::new(&out).join("tmp");
-    let lib_dir = PathBuf::from(&out);
-    if lib_dir.join("include").exists() {
-        println!("cargo:info=wx-rs: wxWidgets dev files already present, skipping download",);
-        return Ok(lib_dir);
-    }
-    println!(
-        "cargo:info=wx-rs: downloading wxWidgets dev files to '{}'",
-        temp_dir.display()
-    );
-    fs::create_dir_all(temp_dir.clone())?;
-    let dev_name = temp_dir.join("wx_dev.7z");
-    let header_name = temp_dir.join("wx_header.7z");
-    let mut dev_dest = File::create(dev_name.clone())?;
-    let mut header_dest = File::create(header_name.clone())?;
-    let mut dev_response = reqwest::blocking::get(dev_target)?;
-    //let dev_content = dev_response.bytes()?;
-    copy(&mut dev_response, &mut dev_dest)?;
-    let mut header_response = reqwest::blocking::get(header_target)?;
-    //let header_content = header_response.bytes()?;
-    copy(&mut header_response, &mut header_dest)?;
-    sevenz_rust::decompress_file(dev_name, lib_dir.clone()).expect("complete");
-    sevenz_rust::decompress_file(header_name, lib_dir.clone()).expect("complete");
-    panic!("MEEE");
 }
 
 fn windows_libs(wx_path: &Path) -> Result<String, Box<dyn Error>> {
@@ -186,26 +170,6 @@ fn osx_libs(wx_path: &Path) -> Result<String, Box<dyn Error>> {
             .output()?
             .stdout,
     )?)
-}
-
-use flate2::read::GzDecoder;
-use glob::glob;
-use std::io;
-fn gunzip_libs(wx_path: &Path) {
-    let path = wx_path.join("lib/vc_x64_lib");
-    let out = env::var("OUT_DIR").expect("No OUT_DIR env var");
-    let out_dir = Path::new(&out).join("lib");
-    for entry in glob(&format!("{}/*.gz", path.display())).unwrap() {
-        if let Ok(file_path) = entry {
-            if path.join(file_path.file_stem().unwrap()).exists() {
-                continue;
-            }
-            let gz_file = File::open(&file_path).unwrap();
-            let mut gz = GzDecoder::new(&gz_file);
-            let mut out = File::create(out_dir.join(file_path.file_stem().unwrap())).unwrap();
-            io::copy(&mut gz, &mut out).unwrap();
-        }
-    }
 }
 
 fn embed_resource_file(wx_path: &Path) {

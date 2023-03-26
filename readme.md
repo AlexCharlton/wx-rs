@@ -16,7 +16,7 @@ Some things that'd be great to have:
 
 ## Building from source
 ```
-git submodule update --init
+git submodule update --init --recursive
 ```
 
 Before using cargo.
@@ -27,21 +27,8 @@ Before using cargo.
 
 ### Using the MSVC toolchain
 
-Using ""x64 Native Tools Command Prompt for VS 2019""
+Make sure you're using ""x64 Native Tools Command Prompt for VS 2019"", and that cargo is in your path when compiling for the first time. After than msys will work fine.
 - https://stackoverflow.com/questions/11065421/command-prompt-wont-change-directory-to-another-drive
-
-```
-$ cd dist/wxWidgets
-$ git submodule update --init
-$ cd build/msw
-$ nmake /f makefile.vc BUILD=release TARGET_CPU=X64
-```
-
-For the sake of Github's file size limits:
-```
-$ cd dist/wxWidgets/vc_x64_lib
-$ gzip wxmsw31u_core.lib
-```
 
 ### Using the GNU toolchain
 This depends on nightly rust to build correctly
