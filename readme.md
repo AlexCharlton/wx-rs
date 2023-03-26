@@ -1,5 +1,8 @@
 # wx-rs
 
+[![Crates.io](https://img.shields.io/crates/v/wx-rs)](https://crates.io/crates/wx-rs)
+[![Docs.rs](https://docs.rs/wx-rs/badge.svg)](https://docs.rs/wx-rs)
+
 *This is an alpha release. Don't expect much from me.*
 
 **Only builds on the MSVC toolchain right now**
