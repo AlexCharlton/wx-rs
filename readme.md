@@ -1,6 +1,6 @@
 # wx-rs
 
-*This is an alpha release. Don't expect much from me.**
+*This is an alpha release. Don't expect much from me.*
 
 **Only builds on the MSVC toolchain right now**
 
