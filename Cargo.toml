@@ -1,6 +1,6 @@
 [package]
 name = "wx-rs"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["alex.n.charlton@gmail.com"]
 edition = "2018"
 description = "Self-contained wxWidgets in Rust."
@@ -8,6 +8,12 @@ repository = "https://github.com/AlexCharlton/wx-rs"
 documentation = "https://docs.rs/wx-rs"
 license = "MIT"
 keywords = ["windowing"]
+
+[features]
+stub_lib = []
+
+[package.metadata.docs.rs]
+features = ["stub_lib"]
 
 [dependencies]
 bitflags = "1.2.1"

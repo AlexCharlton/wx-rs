@@ -24,11 +24,15 @@ fn is_osx() -> bool {
     cfg!(target_os = "macos")
 }
 
+fn is_stub() -> bool {
+    cfg!(feature = "stub_lib") || (!is_windows() && !is_osx())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let wx_path = download_dist()?;
     build_bridge_lib(&wx_path)?;
 
-    if !is_windows() && !is_osx() {
+    if is_stub() {
         return Ok(());
     }
 
@@ -76,7 +80,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn download_dist() -> Result<PathBuf, Box<dyn Error>> {
     let dist_path = Path::new("./dist/");
     let wx_path = PathBuf::from(format!("./dist/{}", WX_PATH));
-    if wx_path.exists() {
+    if wx_path.exists() || is_stub() {
         return Ok(wx_path);
     }
     println!("cargo:warning=wx-rs: Downloading source to './dist/");
@@ -93,7 +97,7 @@ fn download_dist() -> Result<PathBuf, Box<dyn Error>> {
 }
 
 fn build_bridge_lib(wx_path: &Path) -> Result<(), Box<dyn Error>> {
-    if !is_windows() && !is_osx() {
+    if is_stub() {
         println!("cargo:warning=wx-rs: Platform unsupported. Building a stub library.");
         println!("cargo:rerun-if-changed=cpp_src/wxstub.cpp");
         cc::Build::new()
