@@ -15,7 +15,7 @@ An extremely partial set of bindings to wxWidgets, for Rust. The intent is that 
 - Cursor selection
 
 Some things that'd be great to have:
-- The build script is currently highly deficient. It relies on pre-compiled instances of wxWidgets existing in the repo found in `dist/`. So if this does not compile, you need to go in there and compile it. The build script should be better than this.
+- The build script has only been tested on MSVC. Previously I've gotten this to compile on OSX and Windows with the GNU toolchain. There's no reason why this can't work on Linux as well.
 - Icon support for Windows/Linux
 
 
