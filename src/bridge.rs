@@ -489,11 +489,10 @@ unsafe impl HasRawWindowHandle for Window {
     fn raw_window_handle(&self) -> RawWindowHandle {
         unsafe {
             let h = notsafe::get_windows_raw_window_handle();
-            RawWindowHandle::Windows(raw_window_handle::windows::WindowsHandle {
-                hwnd: h.hwnd as *mut _,
-                hinstance: h.hinstance as *mut _,
-                ..raw_window_handle::windows::WindowsHandle::empty()
-            })
+            let mut handle = raw_window_handle::Win32Handle::empty();
+            handle.hwnd = h.hwnd as *mut _;
+            handle.hinstance = h.hinstance as *mut _;
+            RawWindowHandle::Win32(handle)
         }
     }
 
@@ -501,11 +500,11 @@ unsafe impl HasRawWindowHandle for Window {
     fn raw_window_handle(&self) -> RawWindowHandle {
         unsafe {
             let h = notsafe::get_osx_raw_window_handle();
-            RawWindowHandle::MacOS(raw_window_handle::macos::MacOSHandle {
-                ns_window: h.ns_window as *mut _,
-                ns_view: h.ns_view as *mut _,
-                ..raw_window_handle::macos::MacOSHandle::empty()
-            })
+            let mut handle = raw_window_handle::AppKitHandle::empty();
+            handle.ns_window = h.ns_window as *mut _;
+            handle.ns_view = h.ns_view as *mut _;
+
+            RawWindowHandle::AppKit(handle)
         }
     }
 
