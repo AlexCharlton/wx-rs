@@ -1,7 +1,9 @@
 use std::ffi::CString;
 use std::os::raw::c_void;
 
-use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+use raw_window_handle::{
+    HasRawDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
+};
 
 mod notsafe {
     use std::os::raw::{c_char, c_int, c_void};
@@ -489,7 +491,7 @@ unsafe impl HasRawWindowHandle for Window {
     fn raw_window_handle(&self) -> RawWindowHandle {
         unsafe {
             let h = notsafe::get_windows_raw_window_handle();
-            let mut handle = raw_window_handle::Win32Handle::empty();
+            let mut handle = raw_window_handle::Win32WindowHandle::empty();
             handle.hwnd = h.hwnd as *mut _;
             handle.hinstance = h.hinstance as *mut _;
             RawWindowHandle::Win32(handle)
@@ -500,7 +502,7 @@ unsafe impl HasRawWindowHandle for Window {
     fn raw_window_handle(&self) -> RawWindowHandle {
         unsafe {
             let h = notsafe::get_osx_raw_window_handle();
-            let mut handle = raw_window_handle::AppKitHandle::empty();
+            let mut handle = raw_window_handle::AppKitWindowHandle::empty();
             handle.ns_window = h.ns_window as *mut _;
             handle.ns_view = h.ns_view as *mut _;
 
@@ -510,6 +512,25 @@ unsafe impl HasRawWindowHandle for Window {
 
     #[cfg(not(any(windows, target_os = "macos")))]
     fn raw_window_handle(&self) -> RawWindowHandle {
+        panic!("Not supported")
+    }
+}
+
+unsafe impl HasRawDisplayHandle for Window {
+    #[cfg(windows)]
+    fn raw_display_handle(&self) -> RawDisplayHandle {
+        let handle = raw_window_handle::WindowsDisplayHandle::empty();
+        RawDisplayHandle::Windows(handle)
+    }
+
+    #[cfg(target_os = "macos")]
+    fn raw_display_handle(&self) -> RawDisplayHandle {
+        let handle = raw_window_handle::AppKitDisplayHandle::empty();
+        RawDisplayHandle::AppKit(handle)
+    }
+
+    #[cfg(not(any(windows, target_os = "macos")))]
+    fn raw_display_handle(&self) -> RawDisplayHandle {
         panic!("Not supported")
     }
 }
