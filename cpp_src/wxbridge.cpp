@@ -399,19 +399,19 @@ extern "C" {
   }
 #endif
 
-  // The logical display size
+  // How many pixels in the canvas?
   Size get_display_size() {
 #ifdef __APPLE__
     wxSize s =  wxGetApp().frame->GetClientSize();
     struct Size sz = {s.x, s.y};
     return sz;
 #else
-    struct wxSize s = wxGetApp().frame->GetClientSize() * (1.0 / wxGetApp().frame->GetDPIScaleFactor());
+    struct wxSize s = wxGetApp().frame->GetClientSize();
     return Size { s.x, s.y };
 #endif
   }
 
-  // How many pixels in the canvas?
+  // The logical window size
   Size get_client_size() {
 #ifdef __APPLE__
     int status_bar_height;
@@ -428,8 +428,8 @@ extern "C" {
     HWND hwnd = (HWND) wxGetApp().frame->GetHandle();
     RECT rect;
     GetClientRect(hwnd, &rect);
-    struct wxSize s = {(int) (rect.right - rect.left), (int)(rect.bottom - rect.top)};
-    return Size {s.x, s.y};
+    float scale_factor = wxGetApp().frame->GetDPIScaleFactor();
+    return Size {(int)((rect.right - rect.left) / scale_factor), (int)((rect.bottom - rect.top) / scale_factor)};
 #endif
   }
 
