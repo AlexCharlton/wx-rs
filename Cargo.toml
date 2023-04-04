@@ -1,6 +1,6 @@
 [package]
 name = "wx-rs"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["alex.n.charlton@gmail.com"]
 edition = "2021"
 description = "Self-contained wxWidgets in Rust."
