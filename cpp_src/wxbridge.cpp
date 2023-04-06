@@ -478,12 +478,13 @@ extern "C" {
   Size get_mouse_position(wxMouseEvent &event) {
 #ifdef __APPLE__
     wxPoint p = event.GetPosition();
-    float scale_factor = wxGetApp().frame->GetDPIScaleFactor();
-    struct Size s = {p.x * scale_factor, p.y * scale_factor};
+    struct Size s = {p.x, p.y };
     return s;
 #else
+    // TODO Doesn't seem to take into account status bar height
     wxPoint p = event.GetPosition();
-    return Size {p.x, p.y};
+    float scale_factor = wxGetApp().frame->GetDPIScaleFactor();
+    return Size {(int)(p.x / scale_factor), (int)(p.y / scale_factor)};
 #endif
   }
 
